@@ -10,5 +10,6 @@
 #define EdgyCollectionView_BridgingHeader_h
 
 #import <UICollectionViewLeftAlignedLayout/UICollectionViewLeftAlignedLayout.h>
+#import "SWRevealViewController.h"
 
 #endif /* EdgyCollectionView_BridgingHeader_h */

@@ -11,21 +11,14 @@ import UICollectionViewLeftAlignedLayout
 
 class ViewController: UIViewController {
 
-    fileprivate var baseData: [(String, CellMode)] = [
-        ("NewYork", .photo),
-        ("Texas", .photo),
-        ("Illinois", .photo),
-        ("Montana", .photo),
-        ("California", .photo),
-        ("Oregon", .photo),
-        ("Florida", .photo)
-    ]
+    fileprivate var baseData: [(String, CellMode, Visibility)] = DataSource.shared.baseData
 
-    fileprivate var virtualBaseData: [(String, CellMode)]!
+    fileprivate var virtualBaseData: [(String, CellMode, Visibility)]! = DataSource.shared.virtualBaseData
 
     fileprivate var currentTargetIndexPath: IndexPath?
 
     @IBOutlet weak var collectionView: UICollectionView!
+    @IBOutlet weak var menuButton: UIBarButtonItem!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,6 +30,14 @@ class ViewController: UIViewController {
         collectionView.dataSource = self
 
         collectionView.register(UINib(nibName: "PhotoCell", bundle: nil), forCellWithReuseIdentifier: "Cell")
+
+        if let revealViewController = revealViewController() {
+            menuButton.target = revealViewController
+            menuButton.action = #selector(revealViewController.revealToggle(_:))
+            view.addGestureRecognizer(revealViewController.panGestureRecognizer())
+        }
+
+        DataSource.shared.delegate = self
     }
 
     override func didReceiveMemoryWarning() {
@@ -83,12 +84,12 @@ extension ViewController: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return baseData.count
+        return DataSource.shared.visibleCells.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        var baseName = baseData[indexPath.item].0
-        var cellMode = baseData[indexPath.item].1
+        var baseName = DataSource.shared.visibleCells[indexPath.item].0
+        var cellMode = DataSource.shared.visibleCells[indexPath.item].1
 
         if currentTargetIndexPath != nil {
             baseName = virtualBaseData[indexPath.item].0
@@ -104,11 +105,11 @@ extension ViewController: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        let data = baseData[sourceIndexPath.item]
-        baseData.remove(at: sourceIndexPath.item)
-        baseData.insert(data, at: destinationIndexPath.item)
+        let data = DataSource.shared.visibleCells[sourceIndexPath.item]
+        DataSource.shared.visibleCells.remove(at: sourceIndexPath.item)
+        DataSource.shared.visibleCells.insert(data, at: destinationIndexPath.item)
 
-        virtualBaseData = baseData
+        virtualBaseData = DataSource.shared.visibleCells
 
         collectionView.reloadItems(at: [sourceIndexPath, destinationIndexPath])
     }
@@ -204,5 +205,11 @@ extension ViewController: PhotoCellDelegate {
             let cell = collectionView.cellForItem(at: indexPath) {
             cell.alpha = alpha
         }
+    }
+}
+
+extension ViewController: DataSourceDelegate {
+    func didUpdateBaseData() {
+        collectionView.reloadData()
     }
 }
